@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="UTF-8"?><process version="9.9.000">
+  <context>
+    <input>
+      <location>../../../Data/E-Commerce_prepared_withMissingValues</location>
+    </input>
+    <output/>
+    <macros/>
+  </context>
+  <operator activated="true" class="process" compatibility="9.4.000" expanded="true" name="Root">
+    <parameter key="logverbosity" value="init"/>
+    <parameter key="random_seed" value="2001"/>
+    <parameter key="send_mail" value="never"/>
+    <parameter key="notification_email" value=""/>
+    <parameter key="process_duration_for_mail" value="30"/>
+    <parameter key="encoding" value="SYSTEM"/>
+    <process expanded="true">
+      <operator activated="true" class="set_role" compatibility="9.9.000" expanded="true" height="82" name="Set Role" width="90" x="179" y="34">
+        <parameter key="attribute_name" value="CashbackAmount"/>
+        <parameter key="target_role" value="label"/>
+        <list key="set_additional_roles"/>
+      </operator>
+      <operator activated="true" class="optimize_parameters_evolutionary" compatibility="9.9.000" expanded="true" height="103" name="Optimize Parameters (Evolutionary)" width="90" x="380" y="34">
+        <list key="parameters">
+          <parameter key="Random Forest.maximal_depth" value="[-1.0;100.0]"/>
+          <parameter key="Random Forest.confidence" value="[1.0;100.0]"/>
+          <parameter key="Random Forest.subset_ratio" value="[0.0;1.0]"/>
+        </list>
+        <parameter key="error_handling" value="fail on error"/>
+        <parameter key="max_generations" value="49"/>
+        <parameter key="use_early_stopping" value="true"/>
+        <parameter key="generations_without_improval" value="3"/>
+        <parameter key="specify_population_size" value="false"/>
+        <parameter key="population_size" value="5"/>
+        <parameter key="keep_best" value="true"/>
+        <parameter key="mutation_type" value="gaussian_mutation"/>
+        <parameter key="selection_type" value="tournament"/>
+        <parameter key="tournament_fraction" value="0.25"/>
+        <parameter key="crossover_prob" value="0.9"/>
+        <parameter key="use_local_random_seed" value="false"/>
+        <parameter key="local_random_seed" value="1992"/>
+        <parameter key="show_convergence_plot" value="true"/>
+        <process expanded="true">
+          <operator activated="true" class="x_validation" compatibility="9.9.000" expanded="true" height="124" name="X-Validation" width="90" x="45" y="34">
+            <parameter key="create_complete_model" value="false"/>
+            <parameter key="average_performances_only" value="true"/>
+            <parameter key="leave_one_out" value="false"/>
+            <parameter key="number_of_validations" value="10"/>
+            <parameter key="sampling_type" value="automatic"/>
+            <parameter key="use_local_random_seed" value="false"/>
+            <parameter key="local_random_seed" value="1992"/>
+            <process expanded="true">
+              <operator activated="true" class="concurrency:parallel_random_forest" compatibility="9.9.000" expanded="true" height="103" name="Random Forest" width="90" x="112" y="85">
+                <parameter key="number_of_trees" value="200"/>
+                <parameter key="criterion" value="least_square"/>
+                <parameter key="maximal_depth" value="94"/>
+                <parameter key="apply_pruning" value="false"/>
+                <parameter key="confidence" value="7.099485940907746"/>
+                <parameter key="apply_prepruning" value="false"/>
+                <parameter key="minimal_gain" value="Infinity"/>
+                <parameter key="minimal_leaf_size" value="38"/>
+                <parameter key="minimal_size_for_split" value="43"/>
+                <parameter key="number_of_prepruning_alternatives" value="37"/>
+                <parameter key="random_splits" value="false"/>
+                <parameter key="guess_subset_ratio" value="true"/>
+                <parameter key="subset_ratio" value="0.692586106000668"/>
+                <parameter key="voting_strategy" value="confidence vote"/>
+                <parameter key="use_local_random_seed" value="false"/>
+                <parameter key="local_random_seed" value="64"/>
+                <parameter key="enable_parallel_execution" value="true"/>
+              </operator>
+              <connect from_port="training" to_op="Random Forest" to_port="training set"/>
+              <connect from_op="Random Forest" from_port="model" to_port="model"/>
+              <connect from_op="Random Forest" from_port="exampleSet" to_port="through 1"/>
+              <portSpacing port="source_training" spacing="0"/>
+              <portSpacing port="sink_model" spacing="0"/>
+              <portSpacing port="sink_through 1" spacing="0"/>
+              <portSpacing port="sink_through 2" spacing="0"/>
+            </process>
+            <process expanded="true">
+              <operator activated="true" class="apply_model" compatibility="7.1.001" expanded="true" height="82" name="Apply Model" width="90" x="45" y="34">
+                <list key="application_parameters"/>
+                <parameter key="create_view" value="false"/>
+                <description align="center" color="transparent" colored="false" width="126">Apply model to test data</description>
+              </operator>
+              <operator activated="true" class="performance_regression" compatibility="9.9.000" expanded="true" height="82" name="Performance" width="90" x="246" y="34">
+                <parameter key="main_criterion" value="first"/>
+                <parameter key="root_mean_squared_error" value="true"/>
+                <parameter key="absolute_error" value="false"/>
+                <parameter key="relative_error" value="false"/>
+                <parameter key="relative_error_lenient" value="false"/>
+                <parameter key="relative_error_strict" value="false"/>
+                <parameter key="normalized_absolute_error" value="false"/>
+                <parameter key="root_relative_squared_error" value="false"/>
+                <parameter key="squared_error" value="false"/>
+                <parameter key="correlation" value="false"/>
+                <parameter key="squared_correlation" value="false"/>
+                <parameter key="prediction_average" value="false"/>
+                <parameter key="spearman_rho" value="false"/>
+                <parameter key="kendall_tau" value="false"/>
+                <parameter key="skip_undefined_labels" value="true"/>
+                <parameter key="use_example_weights" value="true"/>
+              </operator>
+              <connect from_port="model" to_op="Apply Model" to_port="model"/>
+              <connect from_port="test set" to_op="Apply Model" to_port="unlabelled data"/>
+              <connect from_op="Apply Model" from_port="labelled data" to_op="Performance" to_port="labelled data"/>
+              <connect from_op="Performance" from_port="performance" to_port="averagable 1"/>
+              <portSpacing port="source_model" spacing="0"/>
+              <portSpacing port="source_test set" spacing="0"/>
+              <portSpacing port="source_through 1" spacing="0"/>
+              <portSpacing port="source_through 2" spacing="0"/>
+              <portSpacing port="sink_averagable 1" spacing="0"/>
+              <portSpacing port="sink_averagable 2" spacing="0"/>
+            </process>
+            <description align="center" color="transparent" colored="false" width="126">Cross-validation to learn tree</description>
+          </operator>
+          <operator activated="true" class="log" compatibility="9.9.000" expanded="true" height="82" name="Log" width="90" x="313" y="136">
+            <list key="log">
+              <parameter key="performance" value="operator.X-Validation.value.performance"/>
+              <parameter key="learning rate" value="operator.Neural Net.parameter.learning_rate"/>
+              <parameter key="momentum" value="operator.Neural Net.parameter.momentum"/>
+            </list>
+            <parameter key="sorting_type" value="none"/>
+            <parameter key="sorting_k" value="100"/>
+            <parameter key="persistent" value="false"/>
+            <description align="center" color="transparent" colored="false" width="126">Log parameter values and achieved performance</description>
+          </operator>
+          <connect from_port="input 1" to_op="X-Validation" to_port="training"/>
+          <connect from_op="X-Validation" from_port="averagable 1" to_op="Log" to_port="through 1"/>
+          <connect from_op="Log" from_port="through 1" to_port="performance"/>
+          <portSpacing port="source_input 1" spacing="0"/>
+          <portSpacing port="source_input 2" spacing="0"/>
+          <portSpacing port="sink_performance" spacing="0"/>
+          <portSpacing port="sink_result 1" spacing="0"/>
+        </process>
+        <description align="center" color="transparent" colored="false" width="126">Optimize neural network parameters by an evolutionary parameter optimization</description>
+      </operator>
+      <connect from_port="input 1" to_op="Set Role" to_port="example set input"/>
+      <connect from_op="Set Role" from_port="example set output" to_op="Optimize Parameters (Evolutionary)" to_port="input 1"/>
+      <connect from_op="Optimize Parameters (Evolutionary)" from_port="performance" to_port="result 1"/>
+      <connect from_op="Optimize Parameters (Evolutionary)" from_port="parameter" to_port="result 2"/>
+      <portSpacing port="source_input 1" spacing="0"/>
+      <portSpacing port="source_input 2" spacing="0"/>
+      <portSpacing port="sink_result 1" spacing="0"/>
+      <portSpacing port="sink_result 2" spacing="0"/>
+      <portSpacing port="sink_result 3" spacing="0"/>
+      <description align="left" color="yellow" colored="false" height="109" resized="true" width="308" x="31" y="291">The log demonstrates that the performance gets better and better from generation to generation (note that always 5 paramter sets belong to one population/generation)</description>
+    </process>
+  </operator>
+</process>

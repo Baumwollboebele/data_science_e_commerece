@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8"?><process version="9.9.002">
+  <context>
+    <input>
+      <location>//Data Science/data/E-Commerce_prepared_withoutMissingValues</location>
+    </input>
+    <output/>
+    <macros/>
+  </context>
+  <operator activated="true" class="process" compatibility="9.9.002" expanded="true" name="Process">
+    <parameter key="logverbosity" value="init"/>
+    <parameter key="random_seed" value="2001"/>
+    <parameter key="send_mail" value="never"/>
+    <parameter key="notification_email" value=""/>
+    <parameter key="process_duration_for_mail" value="30"/>
+    <parameter key="encoding" value="SYSTEM"/>
+    <process expanded="true">
+      <operator activated="true" class="subprocess" compatibility="9.9.002" expanded="true" height="82" name="Subprocess" width="90" x="112" y="34">
+        <process expanded="true">
+          <operator activated="true" class="select_attributes" compatibility="9.9.002" expanded="true" height="82" name="Select Attributes (2)" width="90" x="45" y="34">
+            <parameter key="attribute_filter_type" value="subset"/>
+            <parameter key="attribute" value=""/>
+            <parameter key="attributes" value="CashbackAmount|CityTier|CouponUsed|DaySinceLastOrder|HourSpendOnApp|NumberOfAddress|NumberOfDeviceRegistered|OrderAmountHikeFromlastYear|OrderCount|SatisfactionScore|Tenure|WarehouseToHome|Churn|Complain|Gender"/>
+            <parameter key="use_except_expression" value="false"/>
+            <parameter key="value_type" value="attribute_value"/>
+            <parameter key="use_value_type_exception" value="false"/>
+            <parameter key="except_value_type" value="time"/>
+            <parameter key="block_type" value="attribute_block"/>
+            <parameter key="use_block_type_exception" value="false"/>
+            <parameter key="except_block_type" value="value_matrix_row_start"/>
+            <parameter key="invert_selection" value="false"/>
+            <parameter key="include_special_attributes" value="false"/>
+            <description align="center" color="transparent" colored="false" width="126">Relevante Attribute werden ausgew&amp;#228;hlt.</description>
+          </operator>
+          <operator activated="true" class="nominal_to_numerical" compatibility="9.9.002" expanded="true" height="103" name="Nominal to Numerical (2)" width="90" x="179" y="34">
+            <parameter key="return_preprocessing_model" value="false"/>
+            <parameter key="create_view" value="false"/>
+            <parameter key="attribute_filter_type" value="subset"/>
+            <parameter key="attribute" value=""/>
+            <parameter key="attributes" value="Churn|Complain|Gender"/>
+            <parameter key="use_except_expression" value="false"/>
+            <parameter key="value_type" value="nominal"/>
+            <parameter key="use_value_type_exception" value="false"/>
+            <parameter key="except_value_type" value="file_path"/>
+            <parameter key="block_type" value="single_value"/>
+            <parameter key="use_block_type_exception" value="false"/>
+            <parameter key="except_block_type" value="single_value"/>
+            <parameter key="invert_selection" value="false"/>
+            <parameter key="include_special_attributes" value="false"/>
+            <parameter key="coding_type" value="unique integers"/>
+            <parameter key="use_comparison_groups" value="false"/>
+            <list key="comparison_groups"/>
+            <parameter key="unexpected_value_handling" value="all 0 and warning"/>
+            <parameter key="use_underscore_in_name" value="false"/>
+            <description align="center" color="transparent" colored="false" width="126">Binominale Attribute werden auf die Werte 0 und 1 gemappt.</description>
+          </operator>
+          <operator activated="true" class="normalize" compatibility="9.9.002" expanded="true" height="103" name="Normalize (2)" width="90" x="380" y="34">
+            <parameter key="return_preprocessing_model" value="false"/>
+            <parameter key="create_view" value="false"/>
+            <parameter key="attribute_filter_type" value="all"/>
+            <parameter key="attribute" value=""/>
+            <parameter key="attributes" value=""/>
+            <parameter key="use_except_expression" value="false"/>
+            <parameter key="value_type" value="numeric"/>
+            <parameter key="use_value_type_exception" value="false"/>
+            <parameter key="except_value_type" value="real"/>
+            <parameter key="block_type" value="value_series"/>
+            <parameter key="use_block_type_exception" value="false"/>
+            <parameter key="except_block_type" value="value_series_end"/>
+            <parameter key="invert_selection" value="false"/>
+            <parameter key="include_special_attributes" value="false"/>
+            <parameter key="method" value="range transformation"/>
+            <parameter key="min" value="0.0"/>
+            <parameter key="max" value="1.0"/>
+            <parameter key="allow_negative_values" value="false"/>
+            <description align="center" color="transparent" colored="false" width="126">Werte werden mit Min-Max Normalisierung auf Werte zwischen 0 und 1 gemappt.</description>
+          </operator>
+          <connect from_port="in 1" to_op="Select Attributes (2)" to_port="example set input"/>
+          <connect from_op="Select Attributes (2)" from_port="example set output" to_op="Nominal to Numerical (2)" to_port="example set input"/>
+          <connect from_op="Nominal to Numerical (2)" from_port="example set output" to_op="Normalize (2)" to_port="example set input"/>
+          <connect from_op="Normalize (2)" from_port="example set output" to_port="out 1"/>
+          <portSpacing port="source_in 1" spacing="0"/>
+          <portSpacing port="source_in 2" spacing="0"/>
+          <portSpacing port="sink_out 1" spacing="0"/>
+          <portSpacing port="sink_out 2" spacing="0"/>
+        </process>
+        <description align="center" color="transparent" colored="false" width="126">Preprocessing.</description>
+      </operator>
+      <operator activated="true" class="som:som" compatibility="5.2.000" expanded="true" height="103" name="SOM" width="90" x="313" y="34">
+        <parameter key="training_rounds" value="1000"/>
+        <parameter key="net_size" value="automatic"/>
+        <parameter key="net_size_x" value="20"/>
+        <parameter key="net_size_y" value="10"/>
+        <parameter key="initial_learning_rate" value="0.9"/>
+        <parameter key="learning_rate_function" value="inverse-of-time"/>
+        <parameter key="use_toroid_network" value="false"/>
+        <parameter key="use_local_random_seed" value="false"/>
+        <parameter key="local_random_seed" value="1992"/>
+      </operator>
+      <connect from_port="input 1" to_op="Subprocess" to_port="in 1"/>
+      <connect from_op="Subprocess" from_port="out 1" to_op="SOM" to_port="example set"/>
+      <connect from_op="SOM" from_port="example set" to_port="result 1"/>
+      <connect from_op="SOM" from_port="preprocessing model" to_port="result 2"/>
+      <portSpacing port="source_input 1" spacing="0"/>
+      <portSpacing port="source_input 2" spacing="0"/>
+      <portSpacing port="sink_result 1" spacing="0"/>
+      <portSpacing port="sink_result 2" spacing="0"/>
+      <portSpacing port="sink_result 3" spacing="0"/>
+    </process>
+  </operator>
+</process>
